@@ -16,8 +16,17 @@ class Command(BaseCommand):
     help = 'Updates rules data in database'
     BUSINESS_RULE_MODULE_NAME = 'rules'
 
+    def add_arguments(self, parser):
+
+        parser.add_argument(
+            '--keep-rules',
+            action='store_true',
+            help='Keep the rules, update instead of delete'
+        )
+
     def handle(self, *args, **options):
-        self.stdout.write('This command will override all rules data in database.')
+        if not options['keep_rules']:
+            self.stdout.write('This command will overwrite all rules data in database.')
         business_rule_classes = self._find_business_rule_classes(options)
         self._validate(business_rule_classes, options)
         self._save(business_rule_classes, options)
@@ -67,8 +76,9 @@ class Command(BaseCommand):
         self._debug('Vaidation done', options)
 
     def _save(self, business_rule_classes, options):
-        self._debug('Deleting business rules', options)
-        BusinessRuleModel.objects.all().delete()
+        if not options['keep_rules']:
+            self._debug('Deleting business rules', options)
+            BusinessRuleModel.objects.all().delete()
         self._debug('Saving business rules...', options)
         for rule_class in business_rule_classes:
             self._debug('Generating: {}'.format(rule_class.get_name()), options)
